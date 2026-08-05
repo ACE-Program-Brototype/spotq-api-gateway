@@ -1,2 +1,138 @@
-# spotq-api-gateway
-API Gateway service for SpotQ microservices using Envoy Gateway to provide secure, scalable, and reliable traffic management, routing, and service communication.
+# SpotQ API Gateway
+
+API Gateway service for SpotQ microservices built with Envoy Proxy to provide secure, scalable, and reliable traffic management, routing, health monitoring, and service communication.
+
+---
+
+## Features
+
+- Dynamic Path Routing: Routes external requests to appropriate internal microservices based on `/api/v1/` URI path prefixes.
+- Health Checks: Directly exposes gateway readiness endpoints and performs automated background health checks on upstream clusters.
+- CORS Configuration: Built-in Cross-Origin Resource Sharing handling for modern web and mobile applications.
+- Structured Access Logging: Standard JSON access logs sent to stdout containing latency, status code, cluster routing, and correlation request IDs.
+- Admin & Observability Interface: Built-in Envoy administration server exposing metrics, cluster health, and configuration dumps.
+- Automatic Retries & Timeouts: Configured retry policies and timeout safety limits for upstream service calls.
+
+---
+
+## Repository Structure
+
+```
+spotq-api-gateway/
+├── .github/
+│   └── workflows/
+│       └── ci.yml             # GitHub Actions CI pipeline for configuration validation and build testing
+├── envoy/
+│   └── envoy.yaml             # Main Envoy Proxy configuration file
+├── Dockerfile                 # Container packaging based on envoyproxy/envoy:v1.39-latest
+├── package.json               # Development scripts and version specification
+├── .gitignore                 # Version control exclusion configuration
+└── README.md                  # Project documentation
+```
+
+---
+
+## Ports and Services
+
+| Port | Protocol | Purpose |
+| --- | --- | --- |
+| 10000 | HTTP | Primary API Gateway Listener for client traffic |
+| 9901 | HTTP | Envoy Admin Interface & Prometheus Metrics |
+
+---
+
+## Route Mappings
+
+| Ingress Path | Upstream Cluster | Upstream Host & Port | Path Rewrite Rule |
+| --- | --- | --- | --- |
+| `/healthz` | Direct Response (Gateway) | N/A | Returns 200 OK with gateway health payload |
+| `/api/v1/users/*` | `user_service` | `user-service:3001` | Rewrites `/api/v1/users/*` to `/*` |
+| `/api/v1/restaurants/*` | `restaurant_service` | `restaurant-service:3002` | Rewrites `/api/v1/restaurants/*` to `/*` |
+| `/api/v1/orders/*` | `order_service` | `order-service:3003` | Rewrites `/api/v1/orders/*` to `/*` |
+| `/api/v1/queues/*` | `queue_service` | `queue-service:3004` | Rewrites `/api/v1/queues/*` to `/*` |
+| `/api/v1/payments/*` | `payment_service` | `payment-service:3005` | Rewrites `/api/v1/payments/*` to `/*` |
+
+---
+
+## Admin Endpoints
+
+The Envoy admin interface is accessible at `http://localhost:9901` when running locally:
+
+- `/ready` - Readiness check for the gateway process.
+- `/stats/prometheus` - Prometheus-formatted runtime metrics (latency, HTTP status counts, connection stats).
+- `/clusters` - Status and health details for upstream service clusters.
+- `/config_dump` - Dump of current runtime configuration.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Docker installed on host environment (v20.10+ recommended)
+- Node.js (v18+) and PNPM (v9+) for running local scripts
+
+### Running via Docker
+
+Build the Docker image:
+
+```bash
+docker build -t spotq-api-gateway .
+```
+
+Run the container stand-alone:
+
+```bash
+docker run -d --name spotq-gateway -p 10000:10000 -p 9901:9901 spotq-api-gateway
+```
+
+### Running via Docker Compose
+
+In the root repository containing `docker-compose.yaml`:
+
+```bash
+docker compose up --build -d api-gateway
+```
+
+---
+
+## Package Scripts
+
+Available PNPM scripts defined in `package.json`:
+
+```bash
+# Build the Docker image
+pnpm run docker:build
+
+# Run gateway container on ports 10000 and 9901
+pnpm run docker:run
+
+# Stop and remove the gateway container
+pnpm run docker:stop
+
+# Validate envoy.yaml configuration syntax against official Envoy container
+pnpm run validate
+
+# Lint YAML syntax
+pnpm run lint
+```
+
+---
+
+## Validation & Testing
+
+To validate the syntax of `envoy/envoy.yaml` locally using Envoy:
+
+```bash
+docker run --rm -v $(pwd)/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro envoyproxy/envoy:v1.39-latest envoy --mode validate -c /etc/envoy/envoy.yaml
+```
+
+---
+
+## CI/CD Pipeline
+
+Continuous Integration is powered by GitHub Actions (`.github/workflows/ci.yml`). On pushes and pull requests targeting key branches (`main`, `develop`, `SCRUM-*`), the workflow automatically:
+
+1. Validates YAML syntax in `envoy/envoy.yaml`.
+2. Builds the container image `spotq-api-gateway`.
+3. Executes `envoy --mode validate` inside the built container to ensure valid Envoy routing configuration.
