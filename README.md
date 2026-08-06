@@ -46,11 +46,11 @@ spotq-api-gateway/
 | Ingress Path | Upstream Cluster | Upstream Host & Port | Path Rewrite Rule |
 | --- | --- | --- | --- |
 | `/healthz` | Direct Response (Gateway) | N/A | Returns 200 OK with gateway health payload |
-| `/api/v1/users/*` | `user_service` | `user-service:3001` | Rewrites `/api/v1/users/*` to `/*` |
-| `/api/v1/restaurants/*` | `restaurant_service` | `restaurant-service:3002` | Rewrites `/api/v1/restaurants/*` to `/*` |
-| `/api/v1/orders/*` | `order_service` | `order-service:3003` | Rewrites `/api/v1/orders/*` to `/*` |
+| `/api/v1/users/*` | `user_service` | `user-service:3000` | Rewrites `/api/v1/users/*` to `/*` |
+| `/api/v1/restaurants/*` | `restaurant_service` | `restaurant-service:3001` | Rewrites `/api/v1/restaurants/*` to `/*` |
+| `/api/v1/orders/*` | `order_service` | `order-service:3002` | Rewrites `/api/v1/orders/*` to `/*` |
+| `/api/v1/payments/*` | `payment_service` | `payment-service:3003` | Rewrites `/api/v1/payments/*` to `/*` |
 | `/api/v1/queues/*` | `queue_service` | `queue-service:3004` | Rewrites `/api/v1/queues/*` to `/*` |
-| `/api/v1/payments/*` | `payment_service` | `payment-service:3005` | Rewrites `/api/v1/payments/*` to `/*` |
 
 ---
 

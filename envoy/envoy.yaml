@@ -110,22 +110,6 @@ static_resources:
                               num_retries: 2
                               per_try_timeout: 10s
 
-                        # ── Queue Service Routes ─────────────────────────
-                        - match:
-                            prefix: "/api/v1/queues"
-                          route:
-                            regex_rewrite:
-                              pattern:
-                                google_re2: {}
-                                regex: "^/api/v1/queues/?(.*)"
-                              substitution: "/\\1"
-                            cluster: queue_service
-                            timeout: 30s
-                            retry_policy:
-                              retry_on: "5xx,connect-failure,refused-stream"
-                              num_retries: 2
-                              per_try_timeout: 10s
-
                         # ── Payment Service Routes ───────────────────────
                         - match:
                             prefix: "/api/v1/payments"
@@ -136,6 +120,22 @@ static_resources:
                                 regex: "^/api/v1/payments/?(.*)"
                               substitution: "/\\1"
                             cluster: payment_service
+                            timeout: 30s
+                            retry_policy:
+                              retry_on: "5xx,connect-failure,refused-stream"
+                              num_retries: 2
+                              per_try_timeout: 10s
+
+                        # ── Queue Service Routes ─────────────────────────
+                        - match:
+                            prefix: "/api/v1/queues"
+                          route:
+                            regex_rewrite:
+                              pattern:
+                                google_re2: {}
+                                regex: "^/api/v1/queues/?(.*)"
+                              substitution: "/\\1"
+                            cluster: queue_service
                             timeout: 30s
                             retry_policy:
                               retry_on: "5xx,connect-failure,refused-stream"
@@ -187,7 +187,7 @@ static_resources:
                   address:
                     socket_address:
                       address: user-service
-                      port_value: 3001 # Container running port
+                      port_value: 3000 # Container running port
       health_checks:
         - timeout: 5s
           interval: 10s
@@ -209,7 +209,7 @@ static_resources:
                   address:
                     socket_address:
                       address: restaurant-service
-                      port_value: 3002 # Container running port
+                      port_value: 3001 # Container running port
       health_checks:
         - timeout: 5s
           interval: 10s
@@ -231,6 +231,28 @@ static_resources:
                   address:
                     socket_address:
                       address: order-service
+                      port_value: 3002 # Container running port
+      health_checks:
+        - timeout: 5s
+          interval: 10s
+          unhealthy_threshold: 3
+          healthy_threshold: 2
+          http_health_check:
+            path: "/health"
+
+    # ── Payment Service ──────────────────────────────────────────────────
+    - name: payment_service
+      type: STRICT_DNS
+      connect_timeout: 5s
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: payment_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: payment-service
                       port_value: 3003 # Container running port
       health_checks:
         - timeout: 5s
@@ -254,28 +276,6 @@ static_resources:
                     socket_address:
                       address: queue-service
                       port_value: 3004 # Container running port
-      health_checks:
-        - timeout: 5s
-          interval: 10s
-          unhealthy_threshold: 3
-          healthy_threshold: 2
-          http_health_check:
-            path: "/health"
-
-    # ── Payment Service ──────────────────────────────────────────────────
-    - name: payment_service
-      type: STRICT_DNS
-      connect_timeout: 5s
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: payment_service
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: payment-service
-                      port_value: 3005 # Container running port
       health_checks:
         - timeout: 5s
           interval: 10s
