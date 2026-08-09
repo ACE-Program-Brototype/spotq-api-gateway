@@ -53,7 +53,8 @@ static_resources:
                         envoy.filters.http.cors:
                           "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
                           allow_origin_string_match:
-                            - prefix: "*"
+                            - safe_regex:
+                                regex: ".*"
                           allow_methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
                           allow_headers: "Content-Type, Authorization, X-Request-ID"
                           max_age: "86400"
@@ -70,11 +71,10 @@ static_resources:
 
                         # ── User Service Routes ──────────────────────────
                         - match:
-                            prefix: "/api/v1/users"
+                            path_separated_prefix: "/api/v1/users"
                           route:
                             regex_rewrite:
                               pattern:
-                                google_re2: {}
                                 regex: "^/api/v1/users/?(.*)"
                               substitution: "/\\1"
                             cluster: user_service
@@ -83,14 +83,18 @@ static_resources:
                               retry_on: "5xx,connect-failure,refused-stream"
                               num_retries: 2
                               per_try_timeout: 10s
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match:
+                                    safe_regex:
+                                      regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
 
                         # ── Restaurant Service Routes ────────────────────
                         - match:
-                            prefix: "/api/v1/restaurants"
+                            path_separated_prefix: "/api/v1/restaurants"
                           route:
                             regex_rewrite:
                               pattern:
-                                google_re2: {}
                                 regex: "^/api/v1/restaurants/?(.*)"
                               substitution: "/\\1"
                             cluster: restaurant_service
@@ -99,14 +103,18 @@ static_resources:
                               retry_on: "5xx,connect-failure,refused-stream"
                               num_retries: 2
                               per_try_timeout: 10s
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match:
+                                    safe_regex:
+                                      regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
 
                         # ── Order Service Routes ─────────────────────────
                         - match:
-                            prefix: "/api/v1/orders"
+                            path_separated_prefix: "/api/v1/orders"
                           route:
                             regex_rewrite:
                               pattern:
-                                google_re2: {}
                                 regex: "^/api/v1/orders/?(.*)"
                               substitution: "/\\1"
                             cluster: order_service
@@ -115,14 +123,18 @@ static_resources:
                               retry_on: "5xx,connect-failure,refused-stream"
                               num_retries: 2
                               per_try_timeout: 10s
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match:
+                                    safe_regex:
+                                      regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
 
                         # ── Payment Service Routes ───────────────────────
                         - match:
-                            prefix: "/api/v1/payments"
+                            path_separated_prefix: "/api/v1/payments"
                           route:
                             regex_rewrite:
                               pattern:
-                                google_re2: {}
                                 regex: "^/api/v1/payments/?(.*)"
                               substitution: "/\\1"
                             cluster: payment_service
@@ -131,14 +143,18 @@ static_resources:
                               retry_on: "5xx,connect-failure,refused-stream"
                               num_retries: 2
                               per_try_timeout: 10s
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match:
+                                    safe_regex:
+                                      regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
 
                         # ── Queue Service Routes ─────────────────────────
                         - match:
-                            prefix: "/api/v1/queues"
+                            path_separated_prefix: "/api/v1/queues"
                           route:
                             regex_rewrite:
                               pattern:
-                                google_re2: {}
                                 regex: "^/api/v1/queues/?(.*)"
                               substitution: "/\\1"
                             cluster: queue_service
@@ -147,6 +163,11 @@ static_resources:
                               retry_on: "5xx,connect-failure,refused-stream"
                               num_retries: 2
                               per_try_timeout: 10s
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match:
+                                    safe_regex:
+                                      regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
 
                 # ── HTTP Filters ───────────────────────────────────────────
                 http_filters:
