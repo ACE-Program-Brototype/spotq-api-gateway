@@ -1,5 +1,9 @@
 FROM envoyproxy/envoy:v1.39-latest
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy Envoy configuration into the container
 COPY envoy/envoy.yaml /etc/envoy/envoy.yaml
 
