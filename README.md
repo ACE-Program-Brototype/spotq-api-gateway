@@ -56,14 +56,19 @@ spotq-api-gateway/
 
 ## Admin Endpoints
 
-The Envoy admin interface is accessible at `http://localhost:9901` when running locally (restricted via `allow_paths` to safe, required endpoints):
+The Envoy admin interface is accessible at `http://localhost:9901` when running locally.
+
+### Production Allowlist (`allow_paths`)
 
 - `/ready` - Readiness check for the gateway process.
 - `/stats/prometheus` - Prometheus-formatted runtime metrics (latency, HTTP status counts, connection stats).
 - `/clusters` - Status and health details for upstream service clusters.
-- `/config_dump` - Dump of current runtime configuration.
 
-> **Security Note:** The admin interface is restricted to safe paths and must never be exposed publicly. Production deployments must enforce a private-network boundary (e.g., binding exclusively to `127.0.0.1`, private VPC subnets, or internal firewall rules).
+### Sensitive & Debugging Endpoints
+
+- `/config_dump` - **Sensitive**: Dumps full runtime configuration, upstream topologies, and internal routing structures. Excluded from production allowlists and intended for local debugging only.
+
+> **Security Note:** Because the Envoy administration interface is **unauthenticated**, port `9901` must always be restricted to a trusted private network boundary (e.g., binding exclusively to `127.0.0.1`, private VPC subnets, or dedicated internal firewall rules) and must never be exposed to public networks.
 
 ---
 
