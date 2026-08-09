@@ -1,5 +1,6 @@
 # ─── Admin Interface ─────────────────────────────────────────────────────────
 # Accessible at http://localhost:9901 for monitoring and debugging.
+# Restricted via allow_paths. Production deployments must enforce a private-network boundary.
 # Endpoints:
 #   /stats/prometheus  - Prometheus-compatible metrics (request count, error count,
 #                        response latency, active connections)
@@ -11,6 +12,11 @@ admin:
     socket_address:
       address: 0.0.0.0
       port_value: 9901
+  allow_paths:
+    - exact: /ready
+    - prefix: /stats/prometheus
+    - prefix: /clusters
+    - prefix: /config_dump
   access_log:
     - name: envoy.access_loggers.stdout
       typed_config:

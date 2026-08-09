@@ -56,12 +56,14 @@ spotq-api-gateway/
 
 ## Admin Endpoints
 
-The Envoy admin interface is accessible at `http://localhost:9901` when running locally:
+The Envoy admin interface is accessible at `http://localhost:9901` when running locally (restricted via `allow_paths` to safe, required endpoints):
 
 - `/ready` - Readiness check for the gateway process.
 - `/stats/prometheus` - Prometheus-formatted runtime metrics (latency, HTTP status counts, connection stats).
 - `/clusters` - Status and health details for upstream service clusters.
 - `/config_dump` - Dump of current runtime configuration.
+
+> **Security Note:** The admin interface is restricted to safe paths and must never be exposed publicly. Production deployments must enforce a private-network boundary (e.g., binding exclusively to `127.0.0.1`, private VPC subnets, or internal firewall rules).
 
 ---
 
@@ -83,7 +85,7 @@ docker build -t spotq-api-gateway .
 Run the container stand-alone:
 
 ```bash
-docker run -d --name spotq-gateway -p 10000:10000 -p 9901:9901 spotq-api-gateway
+docker run -d --name spotq-gateway -p 10000:10000 -p 127.0.0.1:9901:9901 spotq-api-gateway
 ```
 
 ### Running via Docker Compose
@@ -104,7 +106,7 @@ Available PNPM scripts defined in `package.json`:
 # Build the Docker image
 pnpm run docker:build
 
-# Run gateway container on ports 10000 and 9901
+# Run gateway container on port 10000 and admin port 9901 (bound to 127.0.0.1)
 pnpm run docker:run
 
 # Stop and remove the gateway container
