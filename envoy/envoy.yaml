@@ -77,8 +77,6 @@ static_resources:
 
                         # ── WebSocket Routes ─────────────────────────────
                         # Real-time WebSocket connections proxied to backend services.
-                        # Clients connect via: ws://host:10000/ws/<service>
-                        # Path is rewritten to /ws before reaching the upstream.
                         # timeout: 0s  → disables per-request deadline (WS connections
                         #               are long-lived; a non-zero timeout would close
                         #               the socket after that duration).
@@ -89,8 +87,14 @@ static_resources:
                         # Handles real-time queue status updates and position tracking.
                         # Ingress:  ws://host:10000/ws/queues
                         # Upstream: ws://queue-service:3004/ws
+                        #
+                        # path (exact) is used instead of prefix so that only
+                        # /ws/queues is matched. prefix would also match
+                        # /ws/queuesfoo or /ws/queues/status, which is unintended.
+                        # Envoy excludes query strings from path matching, so
+                        # ws://host:10000/ws/queues?token=... still works.
                         - match:
-                            prefix: "/ws/queues"
+                            path: "/ws/queues"
                             headers:
                               - name: "Upgrade"
                                 string_match:
