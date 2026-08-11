@@ -102,7 +102,18 @@ static_resources:
                           route:
                             cluster: queue_service
                             prefix_rewrite: "/ws"
+                            # timeout: 0s disables the per-request deadline so Envoy
+                            # does not close the socket after a fixed duration.
                             timeout: 0s
+                            # idle_timeout must also be set explicitly. Without it,
+                            # Envoy falls back to the HCM stream_idle_timeout which
+                            # defaults to 5 minutes — silently killing any WebSocket
+                            # that carries no bytes for that period (e.g. a quiet queue).
+                            # 3600s (1 h) is a safe ceiling; the queue-service must send
+                            # WebSocket ping frames at an interval shorter than this
+                            # (e.g. every 30 s) so that dead connections are detected
+                            # at the application layer before Envoy's idle timer fires.
+                            idle_timeout: 3600s
                             upgrade_configs:
                               - upgrade_type: websocket
                                 enabled: true
