@@ -7,11 +7,12 @@ API Gateway service for SpotQ microservices built with Envoy Proxy to provide se
 ## Features
 
 - Dynamic Path Routing: Routes external requests to appropriate internal microservices based on `/api/v1/` URI path prefixes.
+- WebSocket Proxy: Supports real-time WebSocket connections via HTTP Upgrade on port `10000`. Routes `/ws/<service>` paths to the appropriate backend service with path rewriting.
 - Health Checks: Directly exposes gateway readiness endpoints and performs automated background health checks on upstream clusters.
 - CORS Configuration: Built-in Cross-Origin Resource Sharing handling for modern web and mobile applications.
 - Structured Access Logging: Standard JSON access logs sent to stdout containing latency, status code, cluster routing, and correlation request IDs.
 - Admin & Observability Interface: Built-in Envoy administration server exposing metrics, cluster health, and configuration dumps.
-- Automatic Retries & Timeouts: Configured retry policies and timeout safety limits for upstream service calls.
+- Automatic Retries & Timeouts: Configured retry policies and timeout safety limits for upstream service calls. (WebSocket routes intentionally omit retries — retries are meaningless for stateful connections.)
 
 ---
 
@@ -36,21 +37,22 @@ spotq-api-gateway/
 
 | Port | Protocol | Purpose |
 | --- | --- | --- |
-| 10000 | HTTP | Primary API Gateway Listener for client traffic |
+| 10000 | HTTP / WebSocket | Primary API Gateway Listener — handles REST (`/api/v1/`) and real-time WebSocket (`/ws/`) traffic via HTTP Upgrade |
 | 9901 | HTTP | Envoy Admin Interface & Prometheus Metrics |
 
 ---
 
 ## Route Mappings
 
-| Ingress Path | Upstream Cluster | Upstream Host & Port | Path Rewrite Rule |
-| --- | --- | --- | --- |
-| `/healthz` | Direct Response (Gateway) | N/A | Returns 200 OK with gateway health payload |
-| `/api/v1/users/*` | `user_service` | `user-service:3000` | Rewrites `/api/v1/users/*` to `/*` |
-| `/api/v1/restaurants/*` | `restaurant_service` | `restaurant-service:3001` | Rewrites `/api/v1/restaurants/*` to `/*` |
-| `/api/v1/orders/*` | `order_service` | `order-service:3002` | Rewrites `/api/v1/orders/*` to `/*` |
-| `/api/v1/payments/*` | `payment_service` | `payment-service:3003` | Rewrites `/api/v1/payments/*` to `/*` |
-| `/api/v1/queues/*` | `queue_service` | `queue-service:3004` | Rewrites `/api/v1/queues/*` to `/*` |
+| Ingress Path | Protocol | Upstream Cluster | Upstream Host & Port | Path Rewrite Rule |
+| --- | --- | --- | --- | --- |
+| `/healthz` | HTTP | Direct Response (Gateway) | N/A | Returns 200 OK with gateway health payload |
+| `/api/v1/users/*` | HTTP | `user_service` | `user-service:3000` | Rewrites `/api/v1/users/*` to `/*` |
+| `/api/v1/restaurants/*` | HTTP | `restaurant_service` | `restaurant-service:3001` | Rewrites `/api/v1/restaurants/*` to `/*` |
+| `/api/v1/orders/*` | HTTP | `order_service` | `order-service:3002` | Rewrites `/api/v1/orders/*` to `/*` |
+| `/api/v1/payments/*` | HTTP | `payment_service` | `payment-service:3003` | Rewrites `/api/v1/payments/*` to `/*` |
+| `/api/v1/queues/*` | HTTP | `queue_service` | `queue-service:3004` | Rewrites `/api/v1/queues/*` to `/*` |
+| `/ws/queues` | **WebSocket** | `queue_service` | `queue-service:3004` | Rewrites `/ws/queues` to `/ws` — real-time queue position updates |
 
 ---
 
