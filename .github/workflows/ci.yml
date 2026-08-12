@@ -1,0 +1,59 @@
+name: SpotQ API Gateway CI
+
+on:
+  push:
+    branches: [main, develop, "SCRUM-*"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  gateway-ci:
+    name: Gateway CI Pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Validate envoy.yaml syntax
+        run: |
+          echo "Validating envoy.yaml syntax..."
+          # Use a lightweight YAML parser to check syntax
+          python3 -c "
+          import yaml, sys
+          try:
+              with open('envoy/envoy.yaml', 'r') as f:
+                  yaml.safe_load(f)
+              print('envoy.yaml syntax is valid')
+          except yaml.YAMLError as e:
+              print(f'YAML syntax error: {e}')
+              sys.exit(1)
+          "
+
+      - name: Build Docker image
+        run: |
+          echo "Building Docker image..."
+          docker build -t spotq-api-gateway:${{ github.sha }} .
+          echo "Docker image built successfully: spotq-api-gateway:${{ github.sha }}"
+
+      - name: Verify Envoy config loads in built image
+        run: |
+          echo "Verifying Envoy configuration loads correctly..."
+          docker run --rm \
+            spotq-api-gateway:${{ github.sha }} \
+            envoy --mode validate -c /etc/envoy/envoy.yaml
+          echo "Envoy configuration validated successfully inside the built image"
+
+      - name: Report workflow status
+        if: always()
+        run: |
+          echo "=================================================="
+          echo "  SpotQ API Gateway CI - Workflow Report"
+          echo "=================================================="
+          echo "  Branch:    ${{ github.ref_name }}"
+          echo "  Commit:    ${{ github.sha }}"
+          echo "  Actor:     ${{ github.actor }}"
+          echo "  Event:     ${{ github.event_name }}"
+          echo "  Status:    ${{ job.status }}"
+          echo "  Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "=================================================="

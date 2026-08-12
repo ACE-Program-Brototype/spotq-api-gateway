@@ -1,0 +1,20 @@
+{
+  "name": "spotq-api-gateway",
+  "version": "1.0.0",
+  "description": "API Gateway service for SpotQ microservices using Envoy Proxy",
+  "scripts": {
+    "docker:build": "docker build -t spotq-api-gateway .",
+    "docker:run": "docker run -d --name spotq-gateway -p 10000:10000 -p 127.0.0.1:9901:9901 spotq-api-gateway",
+    "docker:stop": "docker rm -f spotq-gateway",
+    "validate": "docker run --rm -v $(pwd)/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro envoyproxy/envoy:v1.39-latest envoy --mode validate -c /etc/envoy/envoy.yaml",
+    "lint": "pnpm dlx yaml-lint envoy/envoy.yaml"
+  },
+  "devDependencies": {
+    "yaml-lint": "^1.7.0"
+  },
+  "keywords": ["envoy", "api-gateway", "spotq"],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@9.15.0",
+  "type": "module"
+}
