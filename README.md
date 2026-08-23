@@ -141,7 +141,7 @@ docker run --rm -v $(pwd)/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro envoyproxy/e
 
 ## CI/CD Pipeline
 
-Continuous Integration is powered by GitHub Actions (`.github/workflows/ci.yml`). On pushes and pull requests targeting key branches (`main`, `develop`, `SCRUM-*`), the workflow automatically:
+Continuous Integration is powered by GitHub Actions (`.github/workflows/ci.yml`). On pushes and pull requests targeting key branches (`main`, `development`, `staging`, `SCRUM-*`, `feat/**`, `fix/**`), the workflow automatically:
 
 1. Validates YAML syntax in `envoy/envoy.yaml`.
 2. Builds the container image `spotq-api-gateway`.

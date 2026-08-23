@@ -2,9 +2,20 @@ name: SpotQ API Gateway CI
 
 on:
   push:
-    branches: [main, develop, "SCRUM-*"]
+    branches:
+      - main
+      - development
+      - staging
+      - "SCRUM-*"
+      - "feat/**"
+      - "fix/**"
+      - "chore/**"
+      - "hotfix/**"
   pull_request:
-    branches: [main, develop]
+    branches:
+      - main
+      - development
+      - staging
 
 jobs:
   gateway-ci:
@@ -13,11 +24,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Validate envoy.yaml syntax
         run: |
           echo "Validating envoy.yaml syntax..."
+          python3 -m pip install --quiet pyyaml
           # Use a lightweight YAML parser to check syntax
           python3 -c "
           import yaml, sys
