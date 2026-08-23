@@ -63,6 +63,7 @@ static_resources:
                                 regex: ".*"
                           allow_methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
                           allow_headers: "Content-Type, Authorization, X-Request-ID"
+                          allow_credentials: true 
                           max_age: "86400"
 
                       # ── Route Matching Rules ────────────────────────────
