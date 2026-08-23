@@ -139,6 +139,26 @@ static_resources:
                                     safe_regex:
                                       regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
 
+                        # ── Admin Routes (Routed to User Service) ────────
+                        - match:
+                            path_separated_prefix: "/api/v1/admin"
+                          route:
+                            regex_rewrite:
+                              pattern:
+                                regex: "^/api/v1/admin/?(.*)"
+                              substitution: "/admin/\\1"
+                            cluster: user_service
+                            timeout: 30s
+                            retry_policy:
+                              retry_on: "5xx,connect-failure,refused-stream"
+                              num_retries: 2
+                              per_try_timeout: 10s
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match:
+                                    safe_regex:
+                                      regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
+
                         # ── Restaurant Service Routes ────────────────────
                         - match:
                             path_separated_prefix: "/api/v1/restaurants"
