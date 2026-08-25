@@ -48,6 +48,7 @@ spotq-api-gateway/
 | --- | --- | --- | --- | --- |
 | `/healthz` | HTTP | Direct Response (Gateway) | N/A | Returns 200 OK with gateway health payload |
 | `/api/v1/users/*` | HTTP | `user_service` | `user-service:3000` | Rewrites `/api/v1/users/*` to `/*` |
+| `/api/v1/admin/*` | HTTP | `user_service` | `user-service:3000` | Rewrites `/api/v1/admin/*` to `/admin/*` |
 | `/api/v1/restaurants/*` | HTTP | `restaurant_service` | `restaurant-service:3001` | Rewrites `/api/v1/restaurants/*` to `/*` |
 | `/api/v1/orders/*` | HTTP | `order_service` | `order-service:3002` | Rewrites `/api/v1/orders/*` to `/*` |
 | `/api/v1/payments/*` | HTTP | `payment_service` | `payment-service:3003` | Rewrites `/api/v1/payments/*` to `/*` |
@@ -140,7 +141,7 @@ docker run --rm -v $(pwd)/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro envoyproxy/e
 
 ## CI/CD Pipeline
 
-Continuous Integration is powered by GitHub Actions (`.github/workflows/ci.yml`). On pushes and pull requests targeting key branches (`main`, `develop`, `SCRUM-*`), the workflow automatically:
+Continuous Integration is powered by GitHub Actions (`.github/workflows/ci.yml`). On pushes and pull requests targeting key branches (`main`, `development`, `staging`, `SCRUM-*`, `feat/**`, `fix/**`), the workflow automatically:
 
 1. Validates YAML syntax in `envoy/envoy.yaml`.
 2. Builds the container image `spotq-api-gateway`.

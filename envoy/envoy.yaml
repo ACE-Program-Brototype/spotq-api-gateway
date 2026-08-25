@@ -63,6 +63,7 @@ static_resources:
                                 regex: ".*"
                           allow_methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
                           allow_headers: "Content-Type, Authorization, X-Request-ID"
+                          allow_credentials: true 
                           max_age: "86400"
 
                       # ── Route Matching Rules ────────────────────────────
@@ -126,6 +127,26 @@ static_resources:
                               pattern:
                                 regex: "^/api/v1/users/?(.*)"
                               substitution: "/\\1"
+                            cluster: user_service
+                            timeout: 30s
+                            retry_policy:
+                              retry_on: "5xx,connect-failure,refused-stream"
+                              num_retries: 2
+                              per_try_timeout: 10s
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match:
+                                    safe_regex:
+                                      regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
+
+                        # ── Admin Routes (Routed to User Service) ────────
+                        - match:
+                            path_separated_prefix: "/api/v1/admin"
+                          route:
+                            regex_rewrite:
+                              pattern:
+                                regex: "^/api/v1/admin/?(.*)"
+                              substitution: "/admin/\\1"
                             cluster: user_service
                             timeout: 30s
                             retry_policy:
