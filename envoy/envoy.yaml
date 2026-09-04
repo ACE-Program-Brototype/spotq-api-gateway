@@ -1,12 +1,4 @@
 # ─── Admin Interface ─────────────────────────────────────────────────────────
-# Accessible at http://localhost:9901 for monitoring and debugging.
-# Restricted via allow_paths. Production deployments must enforce a private-network boundary.
-# Endpoints:
-#   /stats/prometheus  - Prometheus-compatible metrics (request count, error count,
-#                        response latency, active connections)
-#   /clusters          - Cluster health and connection info
-#   /config_dump       - Full configuration dump
-#   /ready             - Health/readiness check
 admin:
   address:
     socket_address:
@@ -40,12 +32,19 @@ static_resources:
                 stat_prefix: ingress_http
                 codec_type: AUTO
                 generate_request_id: true
-
-                # ── WebSocket Upgrade Configuration ───────────────────────
-                # Enables HTTP → WebSocket upgrade on this listener.
-                # Without this, Envoy will reject Upgrade: websocket requests.
                 upgrade_configs:
                   - upgrade_type: websocket
+
+                # ── Custom JSON Local Reply / Error Format ─────────────────
+                local_reply_config:
+                  body_format:
+                    json_format:
+                      success: false
+                      message: "%LOCAL_REPLY_BODY%"
+                      code: "%RESPONSE_CODE%"
+                      error: "%RESPONSE_CODE_DETAILS%"
+                      statusCode: "%RESPONSE_CODE%"
+                    content_type: "application/json; charset=UTF-8"
 
                 # ── Route Configuration ────────────────────────────────────
                 route_config:
@@ -63,12 +62,12 @@ static_resources:
                                 regex: ".*"
                           allow_methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
                           allow_headers: "Content-Type, Authorization, X-Request-ID"
-                          allow_credentials: true 
+                          allow_credentials: true
                           max_age: "86400"
 
                       # ── Route Matching Rules ────────────────────────────
                       routes:
-                        # Health check endpoint (handled by Envoy directly)
+                        # Health Check
                         - match:
                             path: "/healthz"
                           direct_response:
@@ -77,23 +76,6 @@ static_resources:
                               inline_string: '{"status":"healthy","service":"spotq-api-gateway"}'
 
                         # ── WebSocket Routes ─────────────────────────────
-                        # Real-time WebSocket connections proxied to backend services.
-                        # timeout: 0s  → disables per-request deadline (WS connections
-                        #               are long-lived; a non-zero timeout would close
-                        #               the socket after that duration).
-                        # No retry_policy → retries are meaningless for stateful
-                        #                   WebSocket connections.
-
-                        # Queue Service WebSocket
-                        # Handles real-time queue status updates and position tracking.
-                        # Ingress:  ws://host:10000/ws/queues
-                        # Upstream: ws://queue-service:3004/ws
-                        #
-                        # path (exact) is used instead of prefix so that only
-                        # /ws/queues is matched. prefix would also match
-                        # /ws/queuesfoo or /ws/queues/status, which is unintended.
-                        # Envoy excludes query strings from path matching, so
-                        # ws://host:10000/ws/queues?token=... still works.
                         - match:
                             path: "/ws/queues"
                             headers:
@@ -103,21 +85,51 @@ static_resources:
                           route:
                             cluster: queue_service
                             prefix_rewrite: "/ws"
-                            # timeout: 0s disables the per-request deadline so Envoy
-                            # does not close the socket after a fixed duration.
                             timeout: 0s
-                            # idle_timeout must also be set explicitly. Without it,
-                            # Envoy falls back to the HCM stream_idle_timeout which
-                            # defaults to 5 minutes — silently killing any WebSocket
-                            # that carries no bytes for that period (e.g. a quiet queue).
-                            # 3600s (1 h) is a safe ceiling; the queue-service must send
-                            # WebSocket ping frames at an interval shorter than this
-                            # (e.g. every 30 s) so that dead connections are detected
-                            # at the application layer before Envoy's idle timer fires.
                             idle_timeout: 3600s
                             upgrade_configs:
                               - upgrade_type: websocket
                                 enabled: true
+
+                        # ── User Auth Routes (Routed to User Service) ────
+                        - match:
+                            path_separated_prefix: "/api/v1/auth/users"
+                          route:
+                            regex_rewrite:
+                              pattern:
+                                regex: "^/api/v1/auth/users/?(.*)"
+                              substitution: "/\\1"
+                            cluster: user_service
+                            timeout: 30s
+                            retry_policy:
+                              retry_on: "5xx,connect-failure,refused-stream"
+                              num_retries: 2
+                              per_try_timeout: 10s
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match:
+                                    safe_regex:
+                                      regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
+
+                        # ── Restaurant Auth Routes (Routed to Restaurant Service)
+                        - match:
+                            path_separated_prefix: "/api/v1/auth/restaurants"
+                          route:
+                            regex_rewrite:
+                              pattern:
+                                regex: "^/api/v1/auth/restaurants/?(.*)"
+                              substitution: "/\\1"
+                            cluster: restaurant_service
+                            timeout: 30s
+                            retry_policy:
+                              retry_on: "5xx,connect-failure,refused-stream"
+                              num_retries: 2
+                              per_try_timeout: 10s
+                              retriable_request_headers:
+                                - name: ":method"
+                                  string_match:
+                                    safe_regex:
+                                      regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
 
                         # ── User Service Routes ──────────────────────────
                         - match:
@@ -139,7 +151,7 @@ static_resources:
                                     safe_regex:
                                       regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
 
-                        # ── Admin Routes (Routed to User Service) ────────
+                        # ── Admin Routes ─────────────────────────────────
                         - match:
                             path_separated_prefix: "/api/v1/admin"
                           route:
@@ -244,6 +256,54 @@ static_resources:
                   - name: envoy.filters.http.cors
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
+
+                  # ── JWT Authentication & Claim Extraction ─────────────────
+                  - name: envoy.filters.http.jwt_authn
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication
+                      providers:
+                        spotq_jwt:
+                          remote_jwks:
+                            http_uri:
+                              uri: "http://user-service:3000/.well-known/jwks.json"
+                              cluster: user_service
+                              timeout: 2s
+                            cache_duration: 300s
+                          from_headers:
+                            - name: Authorization
+                              value_prefix: "Bearer "
+                          claim_to_headers:
+                            - header_name: "x-user-id"
+                              claim_name: "sub"
+                            - header_name: "x-user-email"
+                              claim_name: "email"
+                            - header_name: "x-user-role"
+                              claim_name: "role"
+                            - header_name: "x-restaurant-id"
+                              claim_name: "restaurantId"
+
+                      rules:
+                        # Public: Health check
+                        - match:
+                            path: "/healthz"
+
+                        # Public: Auth endpoints (e.g. /api/v1/auth/*)
+                        - match:
+                            path_separated_prefix: "/api/v1/auth"
+
+                        # Public: Landing page showcase (GET restaurants only)
+                        - match:
+                            path_separated_prefix: "/api/v1/restaurants"
+                            headers:
+                              - name: ":method"
+                                exact_match: "GET"
+
+                        # Protected: Require JWT for all other /api/v1/ routes (like /api/v1/users)
+                        - match:
+                            prefix: "/api/v1/"
+                          requires:
+                            provider_name: spotq_jwt
+
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -284,7 +344,7 @@ static_resources:
                   address:
                     socket_address:
                       address: user-service
-                      port_value: 3000 # Container running port
+                      port_value: 3000
       health_checks:
         - timeout: 5s
           interval: 10s
@@ -306,7 +366,7 @@ static_resources:
                   address:
                     socket_address:
                       address: restaurant-service
-                      port_value: 3001 # Container running port
+                      port_value: 3001
       health_checks:
         - timeout: 5s
           interval: 10s
@@ -328,7 +388,7 @@ static_resources:
                   address:
                     socket_address:
                       address: order-service
-                      port_value: 3002 # Container running port
+                      port_value: 3002
       health_checks:
         - timeout: 5s
           interval: 10s
@@ -350,7 +410,7 @@ static_resources:
                   address:
                     socket_address:
                       address: payment-service
-                      port_value: 3003 # Container running port
+                      port_value: 3003
       health_checks:
         - timeout: 5s
           interval: 10s
@@ -372,7 +432,7 @@ static_resources:
                   address:
                     socket_address:
                       address: queue-service
-                      port_value: 3004 # Container running port
+                      port_value: 3004
       health_checks:
         - timeout: 5s
           interval: 10s
