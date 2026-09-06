@@ -123,6 +123,18 @@ static_resources:
                             timeout: 30s
                             retry_policy: *default_retry_policy
 
+                        # ── Admin Auth Routes (Routed to User Service) ───
+                        - match:
+                            path_separated_prefix: "/api/v1/auth/admin"
+                          route:
+                            regex_rewrite:
+                              pattern:
+                                regex: "^/api/v1/auth/admin/?(.*)"
+                              substitution: "/admin/\\1"
+                            cluster: user_service
+                            timeout: 30s
+                            retry_policy: *default_retry_policy
+
                         # ── User Service Routes ──────────────────────────
                         - match:
                             path_separated_prefix: "/api/v1/users"
