@@ -119,7 +119,7 @@ static_resources:
                                 - name: ":method"
                                   string_match:
                                     safe_regex:
-                                      regex: "^(GET|HEAD|OPTIONS|PUT|DELETE)$"
+                                      regex: "^(GET|HEAD|OPTIONS)$"
 
                         # ── Restaurant Auth Routes (Routed to Restaurant Service)
                         - match:
