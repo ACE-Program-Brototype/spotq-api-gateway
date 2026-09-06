@@ -53,9 +53,7 @@ static_resources:
                     - name: spotq_api
                       domains: ["*"]
 
-                      # ── Header Sanitization (Prevent Header Spoofing) ────
-                      # Strip any incoming client-supplied identity headers before
-                      # the JWT filter injects verified claims for upstream services.
+                      # ── Header Sanitization ──────────────────────────────
                       request_headers_to_remove:
                         - "x-user-id"
                         - "x-user-email"
@@ -68,9 +66,12 @@ static_resources:
                           "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
                           allow_origin_string_match:
                             - safe_regex:
-                                regex: ".*"
-                          allow_methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-                          allow_headers: "Content-Type, Authorization, X-Request-ID"
+                                regex: "^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$"
+                            - safe_regex:
+                                regex: "^https://([a-zA-Z0-9-]+\\.)*spotq\\.com(:[0-9]+)?$"
+                          allow_methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
+                          allow_headers: "Content-Type, Authorization, X-Request-ID, X-Requested-With, Accept, Origin"
+                          expose_headers: "X-Request-ID, Content-Length, Content-Range"
                           allow_credentials: true
                           max_age: "86400"
 
