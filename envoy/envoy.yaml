@@ -53,6 +53,15 @@ static_resources:
                     - name: spotq_api
                       domains: ["*"]
 
+                      # ── Header Sanitization (Prevent Header Spoofing) ────
+                      # Strip any incoming client-supplied identity headers before
+                      # the JWT filter injects verified claims for upstream services.
+                      request_headers_to_remove:
+                        - "x-user-id"
+                        - "x-user-email"
+                        - "x-user-role"
+                        - "x-restaurant-id"
+
                       # ── CORS Policy ──────────────────────────────────────
                       typed_per_filter_config:
                         envoy.filters.http.cors:
