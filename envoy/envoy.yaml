@@ -298,6 +298,17 @@ static_resources:
                               - name: ":method"
                                 exact_match: "GET"
 
+                        # Public: Razorpay webhook callback
+                        - match:
+                            path: "/api/v1/payments/webhook"
+
+                        # Public: Subscription plans catalog
+                        - match:
+                            path: "/api/v1/payments/plans"
+                            headers:
+                              - name: ":method"
+                                exact_match: "GET"
+
                         # Protected: Require JWT for all other /api/v1/ routes (like /api/v1/users)
                         - match:
                             prefix: "/api/v1/"
