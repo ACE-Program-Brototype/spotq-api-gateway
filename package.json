@@ -9,10 +9,11 @@
     "validate": "docker run --rm -v $(pwd)/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro envoyproxy/envoy:v1.39-latest envoy --mode validate -c /etc/envoy/envoy.yaml",
     "lint": "pnpm dlx yaml-lint envoy/envoy.yaml"
   },
-  "devDependencies": {
-    "yaml-lint": "^1.7.0"
-  },
-  "keywords": ["envoy", "api-gateway", "spotq"],
+  "keywords": [
+    "envoy",
+    "api-gateway",
+    "spotq"
+  ],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@9.15.0",
