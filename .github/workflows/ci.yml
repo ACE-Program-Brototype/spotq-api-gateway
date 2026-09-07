@@ -30,9 +30,19 @@ jobs:
         run: |
           echo "Validating envoy.yaml syntax..."
           python3 -m pip install --quiet pyyaml
-          # Use a lightweight YAML parser to check syntax
+          # Use a lightweight YAML parser to check syntax with Envoy !ignore custom tag support
           python3 -c "
           import yaml, sys
+
+          def ignore_constructor(loader, node):
+              if isinstance(node, yaml.MappingNode):
+                  return loader.construct_mapping(node)
+              elif isinstance(node, yaml.SequenceNode):
+                  return loader.construct_sequence(node)
+              return loader.construct_scalar(node)
+
+          yaml.SafeLoader.add_constructor('!ignore', ignore_constructor)
+
           try:
               with open('envoy/envoy.yaml', 'r') as f:
                   yaml.safe_load(f)
