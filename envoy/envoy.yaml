@@ -1,9 +1,41 @@
+# ─── Reusable Configuration Defaults ──────────────────────────────────────────
+# Uses Envoy's native '!ignore' loader tag to declare reusable YAML anchors
+# that are omitted from Protobuf deserialization.
+!ignore defaults:
+  sockets:
+    - &admin_address { address: 0.0.0.0, port_value: 9901 }
+    - &listener_address { address: 0.0.0.0, port_value: 10000 }
+
+  retry_policy: &default_retry_policy
+    retry_on: "5xx,connect-failure,refused-stream"
+    num_retries: 2
+    per_try_timeout: 10s
+    retriable_request_headers:
+      - name: ":method"
+        string_match:
+          safe_regex:
+            regex: "^(GET|HEAD|OPTIONS)$"
+
+  health_check: &default_health_check
+    timeout: 5s
+    interval: 10s
+    unhealthy_threshold: 3
+    healthy_threshold: 2
+    http_health_check:
+      path: "/health"
+
+  timeouts:
+    route: &default_route_timeout 30s
+    connect: &default_connect_timeout 5s
+
+  cluster:
+    type: &default_cluster_type STRICT_DNS
+    lb_policy: &default_lb_policy ROUND_ROBIN
+
 # ─── Admin Interface ─────────────────────────────────────────────────────────
 admin:
   address:
-    socket_address:
-      address: 0.0.0.0
-      port_value: 9901
+    socket_address: *admin_address
   allow_paths:
     - exact: /ready
     - prefix: /stats/prometheus
@@ -21,9 +53,7 @@ static_resources:
   listeners:
     - name: spotq_http_listener
       address:
-        socket_address:
-          address: 0.0.0.0
-          port_value: 10000
+        socket_address: *listener_address
       filter_chains:
         - filters:
             - name: envoy.filters.network.http_connection_manager
@@ -103,16 +133,8 @@ static_resources:
                                 regex: "^/api/v1/auth/users/?(.*)"
                               substitution: "/\\1"
                             cluster: user_service
-                            timeout: 30s
-                            retry_policy: &default_retry_policy
-                              retry_on: "5xx,connect-failure,refused-stream"
-                              num_retries: 2
-                              per_try_timeout: 10s
-                              retriable_request_headers:
-                                - name: ":method"
-                                  string_match:
-                                    safe_regex:
-                                      regex: "^(GET|HEAD|OPTIONS)$"
+                            timeout: *default_route_timeout
+                            retry_policy: *default_retry_policy
 
                         # ── Restaurant Auth Routes (Routed to Restaurant Service)
                         - match:
@@ -123,7 +145,7 @@ static_resources:
                                 regex: "^/api/v1/auth/restaurants/?(.*)"
                               substitution: "/\\1"
                             cluster: restaurant_service
-                            timeout: 30s
+                            timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
                         # ── Admin Auth Routes (Routed to User Service) ───
@@ -135,7 +157,7 @@ static_resources:
                                 regex: "^/api/v1/auth/admin/?(.*)"
                               substitution: "/admin/\\1"
                             cluster: user_service
-                            timeout: 30s
+                            timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
                         # ── User Service Routes ──────────────────────────
@@ -147,7 +169,7 @@ static_resources:
                                 regex: "^/api/v1/users/?(.*)"
                               substitution: "/\\1"
                             cluster: user_service
-                            timeout: 30s
+                            timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
                         # ── Admin Routes ─────────────────────────────────
@@ -159,7 +181,7 @@ static_resources:
                                 regex: "^/api/v1/admin/?(.*)"
                               substitution: "/admin/\\1"
                             cluster: user_service
-                            timeout: 30s
+                            timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
                         # ── Restaurant Service Routes ────────────────────
@@ -171,7 +193,7 @@ static_resources:
                                 regex: "^/api/v1/restaurants/?(.*)"
                               substitution: "/\\1"
                             cluster: restaurant_service
-                            timeout: 30s
+                            timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
                         # ── Order Service Routes ─────────────────────────
@@ -183,7 +205,7 @@ static_resources:
                                 regex: "^/api/v1/orders/?(.*)"
                               substitution: "/\\1"
                             cluster: order_service
-                            timeout: 30s
+                            timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
                         # ── Payment Service Routes ───────────────────────
@@ -195,7 +217,7 @@ static_resources:
                                 regex: "^/api/v1/payments/?(.*)"
                               substitution: "/\\1"
                             cluster: payment_service
-                            timeout: 30s
+                            timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
                         # ── Queue Service Routes ─────────────────────────
@@ -207,7 +229,7 @@ static_resources:
                                 regex: "^/api/v1/queues/?(.*)"
                               substitution: "/\\1"
                             cluster: queue_service
-                            timeout: 30s
+                            timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
                 # ── HTTP Filters ───────────────────────────────────────────
@@ -242,22 +264,18 @@ static_resources:
                               claim_name: "restaurantId"
 
                       rules:
-                        # Public: Health check
                         - match:
                             path: "/healthz"
 
-                        # Public: Auth endpoints (e.g. /api/v1/auth/*)
                         - match:
                             path_separated_prefix: "/api/v1/auth"
 
-                        # Public: Landing page showcase (GET restaurants only)
                         - match:
                             path_separated_prefix: "/api/v1/restaurants"
                             headers:
                               - name: ":method"
                                 exact_match: "GET"
-
-                        # Protected: Require JWT for all other /api/v1/ routes (like /api/v1/users)
+                                
                         - match:
                             prefix: "/api/v1/"
                           requires:
@@ -292,9 +310,9 @@ static_resources:
 
     # ── User Service ─────────────────────────────────────────────────────
     - name: user_service
-      type: STRICT_DNS
-      connect_timeout: 5s
-      lb_policy: ROUND_ROBIN
+      type: *default_cluster_type
+      connect_timeout: *default_connect_timeout
+      lb_policy: *default_lb_policy
       load_assignment:
         cluster_name: user_service
         endpoints:
@@ -305,19 +323,13 @@ static_resources:
                       address: user-service
                       port_value: 3000
       health_checks:
-        - &default_health_check
-          timeout: 5s
-          interval: 10s
-          unhealthy_threshold: 3
-          healthy_threshold: 2
-          http_health_check:
-            path: "/health"
+        - *default_health_check
 
     # ── Restaurant Service ───────────────────────────────────────────────
     - name: restaurant_service
-      type: STRICT_DNS
-      connect_timeout: 5s
-      lb_policy: ROUND_ROBIN
+      type: *default_cluster_type
+      connect_timeout: *default_connect_timeout
+      lb_policy: *default_lb_policy
       load_assignment:
         cluster_name: restaurant_service
         endpoints:
@@ -332,9 +344,9 @@ static_resources:
 
     # ── Order Service ────────────────────────────────────────────────────
     - name: order_service
-      type: STRICT_DNS
-      connect_timeout: 5s
-      lb_policy: ROUND_ROBIN
+      type: *default_cluster_type
+      connect_timeout: *default_connect_timeout
+      lb_policy: *default_lb_policy
       load_assignment:
         cluster_name: order_service
         endpoints:
@@ -349,9 +361,9 @@ static_resources:
 
     # ── Payment Service ──────────────────────────────────────────────────
     - name: payment_service
-      type: STRICT_DNS
-      connect_timeout: 5s
-      lb_policy: ROUND_ROBIN
+      type: *default_cluster_type
+      connect_timeout: *default_connect_timeout
+      lb_policy: *default_lb_policy
       load_assignment:
         cluster_name: payment_service
         endpoints:
@@ -366,9 +378,9 @@ static_resources:
 
     # ── Queue Service ────────────────────────────────────────────────────
     - name: queue_service
-      type: STRICT_DNS
-      connect_timeout: 5s
-      lb_policy: ROUND_ROBIN
+      type: *default_cluster_type
+      connect_timeout: *default_connect_timeout
+      lb_policy: *default_lb_policy
       load_assignment:
         cluster_name: queue_service
         endpoints:
