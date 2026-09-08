@@ -272,13 +272,6 @@ static_resources:
                         - match:
                             path_separated_prefix: "/api/v1/auth"
 
-                        # Public: Landing page showcase (GET restaurants only)
-                        - match:
-                            path_separated_prefix: "/api/v1/restaurants"
-                            headers:
-                              - name: ":method"
-                                exact_match: "GET"
-
                         # Public: Razorpay webhook callback
                         - match:
                             path: "/api/v1/payments/webhook"
@@ -288,7 +281,8 @@ static_resources:
                             path: "/api/v1/payments/plans"
                             headers:
                               - name: ":method"
-                                exact_match: "GET"
+                                string_match:
+                                  exact: "GET"
 
                         # Protected: Require JWT for all other /api/v1/ routes (like /api/v1/users)
                         - match:
