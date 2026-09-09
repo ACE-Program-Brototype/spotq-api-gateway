@@ -196,6 +196,18 @@ static_resources:
                             timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
+                        # ── Storage Service Routes (Routed to Restaurant Service) ──
+                        - match:
+                            path_separated_prefix: "/api/v1/storage"
+                          route:
+                            regex_rewrite:
+                              pattern:
+                                regex: "^/api/v1/storage/?(.*)"
+                              substitution: "/storage/\\1"
+                            cluster: restaurant_service
+                            timeout: *default_route_timeout
+                            retry_policy: *default_retry_policy
+
                         # ── Order Service Routes ─────────────────────────
                         - match:
                             path_separated_prefix: "/api/v1/orders"

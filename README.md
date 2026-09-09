@@ -50,6 +50,7 @@ spotq-api-gateway/
 | `/api/v1/users/*` | HTTP | `user_service` | `user-service:3000` | Rewrites `/api/v1/users/*` to `/*` |
 | `/api/v1/admin/*` | HTTP | `user_service` | `user-service:3000` | Rewrites `/api/v1/admin/*` to `/admin/*` |
 | `/api/v1/restaurants/*` | HTTP | `restaurant_service` | `restaurant-service:3001` | Rewrites `/api/v1/restaurants/*` to `/*` |
+| `/api/v1/storage/*` | HTTP | `restaurant_service` | `restaurant-service:3001` | Rewrites `/api/v1/storage/*` to `/storage/*` |
 | `/api/v1/orders/*` | HTTP | `order_service` | `order-service:3002` | Rewrites `/api/v1/orders/*` to `/*` |
 | `/api/v1/payments/*` | HTTP | `payment_service` | `payment-service:3003` | Rewrites `/api/v1/payments/*` to `/*` |
 | `/api/v1/queues/*` | HTTP | `queue_service` | `queue-service:3004` | Rewrites `/api/v1/queues/*` to `/*` |
