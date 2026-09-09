@@ -296,6 +296,16 @@ static_resources:
                         - match:
                             path_separated_prefix: "/api/v1/auth"
 
+                        # Public: Restaurant Registration, Onboarding & Staff Auth
+                        - match:
+                            path_separated_prefix: "/api/v1/restaurants/registration"
+                        - match:
+                            path: "/api/v1/restaurants/onboard"
+                        - match:
+                            path_separated_prefix: "/api/v1/restaurants/auth"
+                        - match:
+                            path_separated_prefix: "/api/v1/restaurants/staff"
+
                         # Public: Razorpay webhook callback
                         - match:
                             path: "/api/v1/payments/webhook"
