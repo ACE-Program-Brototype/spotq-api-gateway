@@ -264,9 +264,21 @@ static_resources:
                               claim_name: "restaurantId"
 
                       rules:
-                        # Public: Health check
+                        # Public: Gateway Health check
                         - match:
                             path: "/healthz"
+
+                        # Public: Downstream Service Health checks
+                        - match:
+                            path: "/api/v1/users/health"
+                        - match:
+                            path: "/api/v1/restaurants/health"
+                        - match:
+                            path: "/api/v1/orders/health"
+                        - match:
+                            path: "/api/v1/payments/health"
+                        - match:
+                            path: "/api/v1/queues/health"
 
                         # Public: Auth endpoints (e.g. /api/v1/auth/*)
                         - match:
