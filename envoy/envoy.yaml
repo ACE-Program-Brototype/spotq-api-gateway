@@ -296,19 +296,37 @@ static_resources:
                         - match:
                             path_separated_prefix: "/api/v1/auth"
 
-                        # Public: Restaurant Registration, Onboarding & Staff Auth
+                        # Public: Restaurant Registration (OTP verification & registration flow)
                         - match:
                             path_separated_prefix: "/api/v1/restaurants/registration"
+
+                        # Public: Restaurant Staff Authentication & Password Reset
                         - match:
-                            path: "/api/v1/restaurants/onboard"
+                            path: "/api/v1/restaurants/staff/login"
                         - match:
-                            path_separated_prefix: "/api/v1/restaurants/auth"
+                            path: "/api/v1/restaurants/staff/refresh-token"
                         - match:
-                            path_separated_prefix: "/api/v1/restaurants/staff"
+                            path: "/api/v1/restaurants/staff/forgot-password"
+                        - match:
+                            path: "/api/v1/restaurants/staff/verify-forgot-password-otp"
+                        - match:
+                            path: "/api/v1/restaurants/staff/resend-forgot-password-otp"
+                        - match:
+                            path: "/api/v1/restaurants/staff/reset-password"
+
+                        # Public: Restaurant Staff Invitation Acceptance
+                        - match:
+                            path: "/api/v1/restaurants/staff/invitations/validate"
+                        - match:
+                            path: "/api/v1/restaurants/staff/invitations/accept"
 
                         # Public: Razorpay webhook callback
                         - match:
                             path: "/api/v1/payments/webhook"
+                            headers:
+                              - name: ":method"
+                                string_match:
+                                  exact: "POST"
 
                         # Public: Subscription plans catalog
                         - match:
