@@ -196,6 +196,18 @@ static_resources:
                             timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
+                        # ── Storage Service Routes (Routed to Restaurant Service) ──
+                        - match:
+                            path_separated_prefix: "/api/v1/storage"
+                          route:
+                            regex_rewrite:
+                              pattern:
+                                regex: "^/api/v1/storage/?(.*)"
+                              substitution: "/storage/\\1"
+                            cluster: restaurant_service
+                            timeout: *default_route_timeout
+                            retry_policy: *default_retry_policy
+
                         # ── Order Service Routes ─────────────────────────
                         - match:
                             path_separated_prefix: "/api/v1/orders"
@@ -263,23 +275,71 @@ static_resources:
                             - header_name: "x-restaurant-id"
                               claim_name: "restaurantId"
 
+                        restaurant_jwt:
+                          remote_jwks:
+                            http_uri:
+                              uri: "http://restaurant-service:3001/.well-known/jwks.json"
+                              cluster: restaurant_service
+                              timeout: 2s
+                            cache_duration: 300s
+                          from_headers:
+                            - name: Authorization
+                              value_prefix: "Bearer "
+                          claim_to_headers:
+                            - header_name: "x-user-id"
+                              claim_name: "sub"
+                            - header_name: "x-user-email"
+                              claim_name: "email"
+                            - header_name: "x-user-role"
+                              claim_name: "role"
+                            - header_name: "x-restaurant-id"
+                              claim_name: "restaurantId"
+
                       rules:
+                        # Public: Gateway Health check
                         - match:
                             path: "/healthz"
 
+                        # Public: Downstream Service Health checks
+                        - match:
+                            path: "/api/v1/users/health"
+                        - match:
+                            path: "/api/v1/restaurants/health"
+                        - match:
+                            path: "/api/v1/orders/health"
+                        - match:
+                            path: "/api/v1/payments/health"
+                        - match:
+                            path: "/api/v1/queues/health"
+
+                        # Public: Auth endpoints (e.g. /api/v1/auth/*)
                         - match:
                             path_separated_prefix: "/api/v1/auth"
 
+                        # Public: Razorpay webhook callback
                         - match:
-                            path_separated_prefix: "/api/v1/restaurants"
+                            path: "/api/v1/payments/webhook"
                             headers:
                               - name: ":method"
-                                exact_match: "GET"
-                                
+                                string_match:
+                                  exact: "POST"
+
+                        # Public: Subscription plans catalog
+                        - match:
+                            path: "/api/v1/payments/plans"
+                            headers:
+                              - name: ":method"
+                                string_match:
+                                  exact: "GET"
+
+                        # Protected: Require JWT for all other /api/v1/ routes (like /api/v1/users)
                         - match:
                             prefix: "/api/v1/"
                           requires:
-                            provider_name: spotq_jwt
+                            requires_any:
+                              requirements:
+                                - provider_name: spotq_jwt
+                                - provider_name: restaurant_jwt
 
                   - name: envoy.filters.http.router
                     typed_config:
