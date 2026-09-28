@@ -184,6 +184,18 @@ static_resources:
                             timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
+                        # ── Customer Restaurant Routes (Routed to Restaurant Service - strips /customer) ──
+                        - match:
+                            path_separated_prefix: "/api/v1/restaurants/customer"
+                          route:
+                            regex_rewrite:
+                              pattern:
+                                regex: "^/api/v1/restaurants/customer/?(.*)"
+                              substitution: "/\\1"
+                            cluster: restaurant_service
+                            timeout: *default_route_timeout
+                            retry_policy: *default_retry_policy
+
                         # ── Restaurant Service Routes ────────────────────
                         - match:
                             path_separated_prefix: "/api/v1/restaurants"
