@@ -196,18 +196,6 @@ static_resources:
                             timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
-                        # ── Customer Restaurant Routes (Routed to Restaurant Service) ──
-                        - match:
-                            path_separated_prefix: "/api/v1/customer/restaurants"
-                          route:
-                            regex_rewrite:
-                              pattern:
-                                regex: "^/api/v1/customer/restaurants/?(.*)"
-                              substitution: "/\\1"
-                            cluster: restaurant_service
-                            timeout: *default_route_timeout
-                            retry_policy: *default_retry_policy
-
                         # ── Storage Service Routes (Routed to Restaurant Service) ──
                         - match:
                             path_separated_prefix: "/api/v1/storage"
@@ -328,9 +316,9 @@ static_resources:
                         - match:
                             path_separated_prefix: "/api/v1/auth"
 
-                        # Public: Customer Restaurant routes
+                        # Public: Customer Restaurant routes (public browsing of restaurants & menus)
                         - match:
-                            path_separated_prefix: "/api/v1/customer/restaurants"
+                            path_separated_prefix: "/api/v1/restaurants/customer"
 
                         # Public: Razorpay webhook callback
                         - match:
