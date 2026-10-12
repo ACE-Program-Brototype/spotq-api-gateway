@@ -208,6 +208,14 @@ static_resources:
                             timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
+                        # ── Cart Routes (Routed to Order Service) ────────
+                        - match:
+                            path_separated_prefix: "/api/v1/carts"
+                          route:
+                            cluster: order_service
+                            timeout: *default_route_timeout
+                            retry_policy: *default_retry_policy
+
                         # ── Order Service Routes ─────────────────────────
                         - match:
                             path_separated_prefix: "/api/v1/orders"
