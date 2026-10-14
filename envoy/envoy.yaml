@@ -110,6 +110,28 @@ static_resources:
 
                         # ── WebSocket Routes ─────────────────────────────
                         - match:
+                            prefix: "/api/v1/ws/queues"
+                          route:
+                            cluster: queue_service
+                            prefix_rewrite: "/ws"
+                            timeout: 0s
+                            idle_timeout: 3600s
+                            upgrade_configs:
+                              - upgrade_type: websocket
+                                enabled: true
+
+                        - match:
+                            prefix: "/api/v1/queues/ws"
+                          route:
+                            cluster: queue_service
+                            prefix_rewrite: "/ws"
+                            timeout: 0s
+                            idle_timeout: 3600s
+                            upgrade_configs:
+                              - upgrade_type: websocket
+                                enabled: true
+
+                        - match:
                             prefix: "/ws/queues"
                           route:
                             cluster: queue_service
@@ -336,18 +358,34 @@ static_resources:
                                 string_match:
                                   exact: "GET"
 
-                        # Protected: Require JWT for all other /api/v1/ routes (like /api/v1/users)
+                        # Protected: WebSocket Queues (Requires JWT from user-service or restaurant-service)
                         - match:
-                            prefix: "/api/v1/"
+                            prefix: "/api/v1/ws/queues"
                           requires:
                             requires_any:
                               requirements:
                                 - provider_name: spotq_jwt
                                 - provider_name: restaurant_jwt
 
-                        # Protected: WebSocket Queues (Requires JWT from user-service or restaurant-service)
+                        - match:
+                            prefix: "/api/v1/queues/ws"
+                          requires:
+                            requires_any:
+                              requirements:
+                                - provider_name: spotq_jwt
+                                - provider_name: restaurant_jwt
+
                         - match:
                             prefix: "/ws/queues"
+                          requires:
+                            requires_any:
+                              requirements:
+                                - provider_name: spotq_jwt
+                                - provider_name: restaurant_jwt
+
+                        # Protected: Require JWT for all other /api/v1/ routes (like /api/v1/users)
+                        - match:
+                            prefix: "/api/v1/"
                           requires:
                             requires_any:
                               requirements:
