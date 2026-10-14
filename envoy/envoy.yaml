@@ -212,6 +212,10 @@ static_resources:
                         - match:
                             path_separated_prefix: "/api/v1/carts"
                           route:
+                            regex_rewrite:
+                              pattern:
+                                regex: "^/api/v1/carts/?(.*)"
+                              substitution: "/carts/\\1"
                             cluster: order_service
                             timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
