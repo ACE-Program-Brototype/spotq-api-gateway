@@ -344,8 +344,6 @@ static_resources:
 
                         # Public: Customer Restaurant routes (public browsing of restaurants & menus)
                         - match:
-                            path_separated_prefix: "/api/v1/restaurants/customer"
-                        - match:
                             path_separated_prefix: "/api/v1/restaurants/customers"
 
                         # Public: Razorpay webhook callback
