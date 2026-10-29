@@ -54,7 +54,8 @@ spotq-api-gateway/
 | `/api/v1/orders/*` | HTTP | `order_service` | `order-service:3002` | Rewrites `/api/v1/orders/*` to `/*` |
 | `/api/v1/payments/*` | HTTP | `payment_service` | `payment-service:3003` | Rewrites `/api/v1/payments/*` to `/*` |
 | `/api/v1/queues/*` | HTTP | `queue_service` | `queue-service:3004` | Rewrites `/api/v1/queues/*` to `/*` |
-| `/api/v1/ws/queues` (or `/ws/queues`) | **WebSocket** | `queue_service` | `queue-service:3004` | Rewrites `/api/v1/ws/queues` to `/ws` — real-time queue position updates |
+| `/ws/queues` | **WebSocket** | `queue_service` | `queue-service:3004` | Rewrites `/ws/queues` to `/ws` — real-time queue position updates |
+
 
 ---
 
