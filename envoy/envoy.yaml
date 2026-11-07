@@ -266,18 +266,7 @@ static_resources:
                             timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
 
-                        # -- Subscription Routes (Payment Service) --------
-                        - match:
-                            path_separated_prefix: "/api/v1/subscription"
-                          route:
-                            regex_rewrite:
-                              pattern:
-                                regex: "^/api/v1/subscription/?(.*)"
-                              substitution: "/subscription/\\1"
-                            cluster: payment_service
-                            timeout: *default_route_timeout
-                            retry_policy: *default_retry_policy
-
+                        # ── Subscription Routes (Payment Service) ────────
                         - match:
                             path_separated_prefix: "/api/v1/subscriptions"
                           route:
