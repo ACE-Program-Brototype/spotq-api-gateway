@@ -107,8 +107,8 @@ static_resources:
                             - safe_regex:
                                 regex: "^https://([a-zA-Z0-9-]+\\.)*spotq\\.com(:[0-9]+)?$"
                           allow_methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
-                          allow_headers: "Content-Type, Authorization, X-Request-ID, X-Requested-With, Accept, Origin, X-Idempotency-Key, x-idempotency-key"
-                          expose_headers: "X-Request-ID, Content-Length, Content-Range"
+                          allow_headers: "Content-Type, Authorization, X-Request-ID, X-Requested-With, Accept, Origin, Idempotency-Key, X-Idempotency-Key, x-idempotency-key"
+                          expose_headers: "X-Request-ID, Content-Length, Content-Range, Idempotency-Replayed"
                           allow_credentials: true
                           max_age: "86400"
 
@@ -262,6 +262,18 @@ static_resources:
                               pattern:
                                 regex: "^/api/v1/subscribers/?(.*)"
                               substitution: "/subscribers/\\1"
+                            cluster: payment_service
+                            timeout: *default_route_timeout
+                            retry_policy: *default_retry_policy
+
+                        # ── Subscription Routes (Payment Service) ────────
+                        - match:
+                            path_separated_prefix: "/api/v1/subscriptions"
+                          route:
+                            regex_rewrite:
+                              pattern:
+                                regex: "^/api/v1/subscriptions/?(.*)"
+                              substitution: "/subscriptions/\\1"
                             cluster: payment_service
                             timeout: *default_route_timeout
                             retry_policy: *default_retry_policy
