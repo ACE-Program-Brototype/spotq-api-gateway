@@ -107,7 +107,7 @@ static_resources:
                             - safe_regex:
                                 regex: "^https://([a-zA-Z0-9-]+\\.)*spotq\\.com(:[0-9]+)?$"
                           allow_methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
-                          allow_headers: "Content-Type, Authorization, X-Request-ID, X-Requested-With, Accept, Origin, Idempotency-Key"
+                          allow_headers: "Content-Type, Authorization, X-Request-ID, X-Requested-With, Accept, Origin, Idempotency-Key, X-Idempotency-Key, x-idempotency-key"
                           expose_headers: "X-Request-ID, Content-Length, Content-Range, Idempotency-Replayed"
                           allow_credentials: true
                           max_age: "86400"
